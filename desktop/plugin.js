@@ -24,7 +24,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime'
 
-const VERSION = '0.6.4'
+const VERSION = '0.6.5'
 const PLUGIN_ID = 'hermes-memory-ui'
 const PLUGIN_NAME = 'Hermes Memory UI'
 const PLUGIN_ROUTE = '/memory'
@@ -520,7 +520,23 @@ function tagValues(value) {
   } catch (_) {
     // Provider tag strings are also commonly comma-separated.
   }
-  return value.split(',').map(item => item.trim()).filter(Boolean)
+  // Holographic stores agent keywords in the tags column behind a "keywords: "
+  // line marker (a search/indexing aid, not a display tag). Split on the marker
+  // line so the marker disappears from chips but the keyword text stays shown
+  // alongside the user's own tags.
+  return value
+    .split(',')
+    .flatMap(item =>
+      item
+        .split('\n')
+        .flatMap(line => {
+          const trimmed = line.trim()
+          const mark = trimmed.match(/^keywords:\s+(.*)$/)
+          return mark ? [mark[1]] : [trimmed]
+        })
+    )
+    .map(item => item.trim())
+    .filter(Boolean)
 }
 
 function Field({ label, children, className = '' }) {
